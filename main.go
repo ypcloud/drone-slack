@@ -18,7 +18,7 @@ func main() {
 	app.Action = run
 	app.Version = fmt.Sprintf("1.0.%s", build)
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name:   "webhook",
 			Usage:  "slack webhook url",
 			EnvVar: "SLACK_WEBHOOK,PLUGIN_WEBHOOK",
@@ -111,6 +111,10 @@ func main() {
 			Name:  "env-file",
 			Usage: "source env file",
 		},
+		cli.BoolTFlag{
+			Name:  "letter",
+			Usage: "Enable / disable .Pipeline-Letter proccesing",
+		},
 	}
 
 	if err := app.Run(os.Args); err != nil {
@@ -138,7 +142,7 @@ func run(c *cli.Context) error {
 			Link:   c.String("build.link"),
 		},
 		Config: Config{
-			Webhook:   c.String("webhook"),
+			Webhook:   c.StringSlice("webhook"),
 			Channel:   c.String("channel"),
 			Recipient: c.String("recipient"),
 			Username:  c.String("username"),
@@ -146,6 +150,7 @@ func run(c *cli.Context) error {
 			ImageURL:  c.String("image"),
 			IconURL:   c.String("icon.url"),
 			IconEmoji: c.String("icon.emoji"),
+			Letter:    c.Bool("letter"),
 		},
 	}
 

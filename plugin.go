@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
-
+    "io/ioutil"
 	"github.com/bluele/slack"
 )
 
@@ -24,7 +24,7 @@ type (
 	}
 
 	Config struct {
-		Webhook   string
+		Webhook   []string
 		Channel   string
 		Recipient string
 		Username  string
@@ -32,6 +32,7 @@ type (
 		ImageURL  string
 		IconURL   string
 		IconEmoji string
+		Letter    bool
 	}
 
 	Plugin struct {
@@ -70,8 +71,38 @@ func (p Plugin) Exec() error {
 		attachment.Text = txt
 	}
 
-	client := slack.NewWebHook(p.Config.Webhook)
-	return client.PostMessage(&payload)
+	var letter bool
+	letterPayload := slack.WebHookPostPayload{}
+
+	if p.Config.Letter {
+	    b, err := ioutil.ReadFile(".Pipeline-Letter")
+	    if err == nil {
+			letterPayload.Username = p.Config.Username
+			letterPayload.Attachments = []*slack.Attachment{&attachment}
+			letterPayload.IconUrl = p.Config.IconURL
+			letterPayload.IconEmoji = p.Config.IconEmoji
+			letterPayload.Text = string(b)
+			letter = true
+	    }
+	}
+
+	for _, webhook := range p.Config.Webhook {
+
+		client := slack.NewWebHook(webhook)
+		if letter {
+			err := client.PostMessage(&letterPayload)
+			if err != nil {
+				return err
+			}
+		}
+
+		err := client.PostMessage(&payload)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func message(repo Repo, build Build) string {
